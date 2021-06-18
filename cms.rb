@@ -7,7 +7,6 @@ configure do
   # set :erb, escape_html: true
   # enable :sessions
   # set :session_secret, "secret"
-  set :port, 8080
 end
 
 root = File.expand_path(__dir__)
