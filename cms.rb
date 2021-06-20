@@ -45,3 +45,18 @@ get "/:filename" do
     redirect "/"
   end
 end
+
+get "/:filename/edit" do
+  @filename = params[:filename]
+  path = root + "/data/" + @filename
+  @content = File.read(path)
+  erb :edit
+end
+
+post "/:filename" do
+  filename = params[:filename]
+  path = root + "/data/" + filename
+  File.write(path, params[:content])
+  session[:message] = "#{filename} has been updated."
+  redirect "/"
+end
