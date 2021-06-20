@@ -5,8 +5,8 @@ require "tilt/erubis"
 
 configure do
   # set :erb, escape_html: true
-  # enable :sessions
-  # set :session_secret, "secret"
+  enable :sessions
+  set :session_secret, 'super secret'
 end
 
 root = File.expand_path(__dir__)
@@ -18,8 +18,13 @@ get "/" do
   erb :index
 end
 
-get "/:file_name" do
-  path = root + "/data/" + params[:file_name]
-  headers["Content-Type"] = "text/plain"
-  File.read(path)
+get "/:filename" do
+  path = root + "/data/" + params[:filename]
+  if File.file?(path)
+    headers["Content-Type"] = "text/plain"
+    File.read(path)
+  else
+    session[:message] = "#{params[:filename]} does not exist."
+    redirect "/"
+  end
 end

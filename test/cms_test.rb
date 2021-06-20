@@ -29,4 +29,16 @@ class CMSTest < Minitest::Test
     assert_match "2007 - Ruby 1.9 released.", last_response.body
     assert_match "2019 - Ruby 2.7 released.", last_response.body
   end
+
+  def test_document_not_found
+    get "/hellokitty.txt"
+    assert_equal 302, last_response.status
+    get last_response["Location"]
+
+    assert_equal 200, last_response.status
+    assert_includes last_response.body, "hellokitty.txt does not exist"
+
+    get "/"
+    refute_includes last_response.body, "hellokitty.txt does not exist"
+  end
 end
