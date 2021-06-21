@@ -2,6 +2,7 @@ ENV["RACK_ENV"] = "test"
 
 require "minitest/autorun"
 require "rack/test"
+require "fileutils"
 
 require_relative "../cms"
 
@@ -12,22 +13,36 @@ class CMSTest < Minitest::Test
     Sinatra::Application
   end
 
+  def setup
+    FileUtils.mkdir_p(data_path)
+  end
+
+  def teardown
+    FileUtils.rm_rf(data_path)
+  end
+
+  def create_document(name, content = "")
+    File.open(File.join(data_path, name), "w") do |file|
+      file.write(content)
+    end
+  end
+
   def test_index
+    create_document "about.md"
+    create_document "changes.txt"
     get "/"
     assert_equal 200, last_response.status
     assert_equal "text/html;charset=utf-8", last_response["Content-Type"]
-    assert_match "about.md", last_response.body
-    assert_match "changes.txt", last_response.body
-    assert_match "history.txt", last_response.body
+    assert_includes last_response.body, "about.md"
+    assert_includes last_response.body, "changes.txt"
   end
 
   def test_viewing_text_document
-    get "/history.txt"
+    create_document "changes.txt", "added new content."
+    get "/changes.txt"
     assert_equal 200, last_response.status
     assert_equal "text/plain", last_response["Content-Type"]
-    assert_match "1993 - Yukihiro Matsumoto dreams up Ruby.", last_response.body
-    assert_match "2007 - Ruby 1.9 released.", last_response.body
-    assert_match "2019 - Ruby 2.7 released.", last_response.body
+    assert_includes last_response.body, "added new content."
   end
 
   def test_document_not_found
@@ -43,6 +58,7 @@ class CMSTest < Minitest::Test
   end
 
   def test_viewing_markdown_document
+    create_document "about.md", "#Ruby"
     get "/about.md"
     assert_equal 200, last_response.status
     assert_equal "text/html;charset=utf-8", last_response["Content-Type"]
@@ -50,6 +66,7 @@ class CMSTest < Minitest::Test
   end
 
   def test_editing_document
+    create_document "changes.txt", "Some random text."
     get "/changes.txt/edit"
 
     assert_equal 200, last_response.status

@@ -10,10 +10,17 @@ configure do
   set :session_secret, 'super secret'
 end
 
-root = File.expand_path(__dir__)
+def data_path
+  if ENV["RACK_ENV"] == "test"
+    File.expand_path('test/data', __dir__)
+  else
+    File.expand_path('data', __dir__)
+  end
+end
 
 get "/" do
-  @files = Dir.glob(root + "/data/*").map do |path|
+  pattern = File.join(data_path, "*")
+  @files = Dir.glob(pattern).map do |path|
     File.basename(path)
   end
   erb :index
@@ -37,9 +44,9 @@ end
 
 get "/:filename" do
   filename = params[:filename]
-  path = root + "/data/" + filename
-  if File.exist?(path)
-    load_file_content(path)
+  file_path = File.join(data_path, filename)
+  if File.exist?(file_path)
+    load_file_content(file_path)
   else
     session[:message] = "#{filename} does not exist."
     redirect "/"
@@ -48,15 +55,15 @@ end
 
 get "/:filename/edit" do
   @filename = params[:filename]
-  path = root + "/data/" + @filename
-  @content = File.read(path)
+  file_path = File.join(data_path, @filename)
+  @content = File.read(file_path)
   erb :edit
 end
 
 post "/:filename" do
   filename = params[:filename]
-  path = root + "/data/" + filename
-  File.write(path, params[:content])
+  file_path = File.join(data_path, filename)
+  File.write(file_path, params[:content])
   session[:message] = "#{filename} has been updated."
   redirect "/"
 end
