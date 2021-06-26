@@ -3,6 +3,7 @@ require "sinatra/reloader" if development?
 require "tilt/erubis"
 require "redcarpet"
 require "yaml"
+require "bcrypt"
 
 configure do
   # set :erb, escape_html: true
@@ -69,10 +70,15 @@ def load_user_credentials
   YAML.load_file(credentials_path)
 end
 
-post "/users/signin" do
+def valid_credentials?(username, password)
   credentials = load_user_credentials
-  username = params[:username]
-  if credentials.key?(username) && credentials[username] == params[:password]
+  return false unless credentials.key?(username)
+  hashed_pass = BCrypt::Password.new(credentials[username])
+  hashed_pass == password
+end
+
+post "/users/signin" do
+  if valid_credentials?(params[:username], params[:password])
     session[:username] = params[:username]
     session[:message] = "Welcome!"
     redirect "/"

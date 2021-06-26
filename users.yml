@@ -1,5 +1,5 @@
 {
-  admin: secret,
-  bill: billspass,
-  sonia: soniaspass
+  admin: $2a$12$rZnUeKO7Qelpm.o.MPjnZuyJFAi15yH7ig2ZPb0fRRpCs3Gfdp2rm,
+  bill: $2a$12$NCp4rEvDrfgRaUlTM1eeX.KHbXQw6SCoq9GgCudN.uUs1MzPvx5g.,
+  sonia: $2a$12$7avZi4RoaKc87tKiZIV7l.lE6GQ1GTI2zNFOywfcy6.y68fIo9KgK
 }
