@@ -1,8 +1,8 @@
 require "sinatra"
-require "sinatra/reloader"
-# require "sinatra/content_for"
+require "sinatra/reloader" if development?
 require "tilt/erubis"
 require "redcarpet"
+require "yaml"
 
 configure do
   # set :erb, escape_html: true
@@ -60,8 +60,19 @@ get "/users/signin" do
   erb :signin
 end
 
+def load_user_credentials
+  credentials_path = if ENV["RACK_ENV"] == "test"
+                       File.expand_path('test/users.yml', __dir__)
+                     else
+                       File.expand_path('users.yml', __dir__)
+                     end
+  YAML.load_file(credentials_path)
+end
+
 post "/users/signin" do
-  if params[:username] == "admin" && params[:password] == "secret"
+  credentials = load_user_credentials
+  username = params[:username]
+  if credentials.key?(username) && credentials[username] == params[:password]
     session[:username] = params[:username]
     session[:message] = "Welcome!"
     redirect "/"

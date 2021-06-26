@@ -1,0 +1,5 @@
+{
+  admin: secret,
+  bill: billspass,
+  sonia: soniaspass
+}
