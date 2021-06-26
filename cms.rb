@@ -42,12 +42,21 @@ get "/new" do
   erb :new
 end
 
+def invalid_extension?(filename)
+  valid_extensions = ["txt", "md"]
+  !valid_extensions.include?(filename.split(".").last)
+end
+
 post "/create" do
   require_signed_in_user
   filename = params[:filename]
   if filename.empty?
     status 422
     session[:message] = "A name is required."
+    erb :new
+  elsif invalid_extension?(filename)
+    status 422
+    session[:message] = "Please choose a valid extension."
     erb :new
   else
     path = File.join(data_path, filename)
