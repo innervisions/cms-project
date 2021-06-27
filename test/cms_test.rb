@@ -29,12 +29,6 @@ class CMSTest < Minitest::Test
     { "rack.session" => { username: "admin" } }
   end
 
-  def create_document(name, content = "")
-    File.open(File.join(data_path, name), "w") do |file|
-      file.write(content)
-    end
-  end
-
   def test_index
     create_document "about.md"
     create_document "changes.txt"
@@ -197,5 +191,16 @@ class CMSTest < Minitest::Test
     get last_response["Location"]
 
     assert_includes last_response.body, "Sign In"
+  end
+
+  def test_duplicating_document
+    create_document "testdoc.txt", "Some content"
+
+    post "/testdoc.txt/duplicate", {}, admin_session
+    assert_equal 302, last_response.status
+    assert_equal "testdoc.txt has been duplicated.", session[:message]
+
+    get last_response["Location"]
+    assert_includes last_response.body, "testdoc dup1.txt"
   end
 end

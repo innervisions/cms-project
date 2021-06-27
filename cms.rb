@@ -19,6 +19,12 @@ def data_path
   end
 end
 
+def create_document(name, content = "")
+  File.open(File.join(data_path, name), "w") do |file|
+    file.write(content)
+  end
+end
+
 def user_signed_in?
   session.key?(:username)
 end
@@ -59,8 +65,7 @@ post "/create" do
     session[:message] = "Please choose a valid extension."
     erb :new
   else
-    path = File.join(data_path, filename)
-    File.new(path, "w")
+    create_document(filename, "")
     session[:message] = "#{filename} has been created."
     redirect "/"
   end
@@ -154,5 +159,29 @@ post "/:filename/delete" do
   file_path = File.join(data_path, filename)
   File.delete(file_path)
   session[:message] = "#{filename} was deleted."
+  redirect "/"
+end
+
+def generate_duplicate_name(file_path)
+  idx = 1
+  extension = File.extname(file_path)
+  base_name = File.basename(file_path, ".*")
+  duplicate_name = nil
+  loop do
+    duplicate_name = "#{base_name} dup#{idx}#{extension}"
+    break unless File.exist?(File.join(data_path, duplicate_name))
+    idx += 1
+  end
+  duplicate_name
+end
+
+post "/:filename/duplicate" do
+  require_signed_in_user
+  filename = params[:filename]
+  file_path = File.join(data_path, filename)
+  duplicate_name = generate_duplicate_name(file_path)
+  content = File.read(file_path)
+  create_document(duplicate_name, content)
+  session[:message] = "#{filename} has been duplicated."
   redirect "/"
 end
