@@ -15,10 +15,13 @@ class CMSTest < Minitest::Test
 
   def setup
     FileUtils.mkdir_p(data_path)
+    hashed_pass = "$2a$12$il/g.87st4QKN9hKH.j5iujNje0x1sUxUDuUO.egnng2e00asE33G"
+    File.write(user_credentials_path, { "admin" => hashed_pass }.to_yaml)
   end
 
   def teardown
     FileUtils.rm_rf(data_path)
+    FileUtils.rm(user_credentials_path)
   end
 
   def session
@@ -202,5 +205,33 @@ class CMSTest < Minitest::Test
 
     get last_response["Location"]
     assert_includes last_response.body, "testdoc dup1.txt"
+  end
+
+  def test_user_signup_form
+    get "/users/signup"
+    assert_equal 200, last_response.status
+    assert_includes last_response.body, "<input"
+    assert_includes last_response.body, '<button type="submit"'
+  end
+
+  def test_signup
+    post "/users/signup", { username: "bob", password: "bobspass" }
+    assert_equal 302, last_response.status
+    assert_equal "You have been registered successfully!", session[:message]
+    credentials = load_user_credentials
+    hashed_pass = BCrypt::Password.new(credentials["bob"])
+    assert_equal hashed_pass, "bobspass"
+  end
+
+  def test_signup_with_invalid_username
+    post "/users/signup", { username: "", password: "somepass" }
+    assert_equal 422, last_response.status
+    assert_includes last_response.body, "Please enter a valid username."
+  end
+
+  def test_signup_with_invalid_password
+    post "/users/signup", { username: "joe", password: "abc" }
+    assert_equal 422, last_response.status
+    assert_includes last_response.body, "Password must contain at least seven characters."
   end
 end

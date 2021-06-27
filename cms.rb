@@ -75,12 +75,20 @@ get "/users/signin" do
   erb :signin
 end
 
+get "/users/signup" do
+  erb :signup
+end
+
+def user_credentials_path
+  if ENV["RACK_ENV"] == "test"
+    File.expand_path('test/users.yml', __dir__)
+  else
+    File.expand_path('users.yml', __dir__)
+  end
+end
+
 def load_user_credentials
-  credentials_path = if ENV["RACK_ENV"] == "test"
-                       File.expand_path('test/users.yml', __dir__)
-                     else
-                       File.expand_path('users.yml', __dir__)
-                     end
+  credentials_path = user_credentials_path
   YAML.load_file(credentials_path)
 end
 
@@ -107,6 +115,41 @@ post "/users/signout" do
   session.delete(:username)
   session[:message] = "You have been signed out."
   redirect "/"
+end
+
+def validate_username(username)
+  return "Please enter a valid username." if username.size.zero?
+  credentials = load_user_credentials
+  return unless credentials.key?(username)
+  "Username already exists."
+end
+
+def validate_password(password)
+  return unless password.size < 7
+  "Password must contain at least seven characters."
+end
+
+def add_user(username, password)
+  credentials = load_user_credentials
+  credentials[username] = BCrypt::Password.create(password).to_s
+  File.write(user_credentials_path, credentials.to_yaml)
+end
+
+post "/users/signup" do
+  username = params[:username]
+  password = params[:password]
+  message = validate_username(username) ||
+            validate_password(password)
+  if message
+    status 422
+    session[:message] = message
+    erb :signup
+  else
+    add_user(username, password)
+    session[:message] = "You have been registered successfully!"
+    session[:username] = username
+    redirect "/"
+  end
 end
 
 def render_markdown(text)
